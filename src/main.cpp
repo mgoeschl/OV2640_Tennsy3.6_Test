@@ -18,10 +18,7 @@
 #include <ArduCAM.h>
 #include <SPI.h>
 #include "memorysaver.h"
-//This demo can only work on OV2640_MINI_2MP platform.
-#if !(defined OV2640_MINI_2MP)
-  #error Please select the hardware platform and camera module in the ../libraries/ArduCAM/memorysaver.h file
-#endif
+
 #define BMPIMAGEOFFSET 66
 const char bmp_header[BMPIMAGEOFFSET] PROGMEM =
 {
@@ -36,31 +33,22 @@ const int CS = 7;
 bool is_header = false;
 int mode = 0;
 uint8_t start_capture = 0;
-#if defined (OV2640_MINI_2MP)
-  ArduCAM myCAM( OV2640, CS );
-#else
-  ArduCAM myCAM( OV5642, CS );
-#endif
+ArduCAM myCAM( OV2640, CS );
 uint8_t read_fifo_burst(ArduCAM myCAM);
+
 void setup() {
-// put your setup code here, to run once:
 uint8_t vid, pid;
 uint8_t temp;
-#if defined(__SAM3X8E__)
-  Wire1.begin();
-  Serial.begin(115200);
-#else
-  Wire.begin();
-  // Serial.begin(921600);
-  Serial.begin(115200);
-#endif
+Wire.begin();
+// Serial.begin(921600);
+Serial.begin(115200);
 Serial.println(F("ACK CMD ArduCAM Start! END"));
 // set the CS as an output:
 pinMode(CS, OUTPUT);
 digitalWrite(CS, HIGH);
 // initialize SPI:
 SPI.begin();
-  //Reset the CPLD
+//Reset the CPLD
 myCAM.write_reg(0x07, 0x80);
 delay(100);
 myCAM.write_reg(0x07, 0x00);
@@ -77,8 +65,7 @@ while(1){
   }
 }
 
-#if defined (OV2640_MINI_2MP)
-  while(1){
+while(1){
     //Check if the camera module type is OV2640
     myCAM.wrSensorReg8_8(0xff, 0x01);
     myCAM.rdSensorReg8_8(OV2640_CHIPID_HIGH, &vid);
@@ -90,39 +77,19 @@ while(1){
     else{
       Serial.println(F("ACK CMD OV2640 detected. END"));break;
     } 
-  }
-#else
-  while(1){
-    //Check if the camera module type is OV5642
-    myCAM.wrSensorReg16_8(0xff, 0x01);
-    myCAM.rdSensorReg16_8(OV5642_CHIPID_HIGH, &vid);
-    myCAM.rdSensorReg16_8(OV5642_CHIPID_LOW, &pid);
-    if((vid != 0x56) || (pid != 0x42)){
-      Serial.println(F("ACK CMD Can't find OV5642 module! END"));
-      delay(1000);continue;
-    }
-    else{
-      Serial.println(F("ACK CMD OV5642 detected. END"));break;
-    } 
-  }
-#endif
-//Change to JPEG capture mode and initialize the OV5642 module
+}
+
+//Change to JPEG capture mode and initialize 
 myCAM.set_format(JPEG);
 myCAM.InitCAM();
-#if defined (OV2640_MINI_2MP)
-  myCAM.OV2640_set_JPEG_size(OV2640_320x240);
-#else
-  myCAM.write_reg(ARDUCHIP_TIM, VSYNC_LEVEL_MASK);   //VSYNC is active HIGH
-  myCAM.OV5642_set_JPEG_size(OV5642_320x240);
-#endif
+myCAM.OV2640_set_JPEG_size(OV2640_320x240);
 delay(1000);
 myCAM.clear_fifo_flag();
-#if !(defined (OV2640_MINI_2MP))
-myCAM.write_reg(ARDUCHIP_FRAMES,0x00);
-#endif
+
 }
+
 void loop() {
-// put your main code here, to run repeatedly:
+
 uint8_t temp = 0xff, temp_last = 0;
 bool is_header = false;
 if (Serial.available())
@@ -185,9 +152,6 @@ if (Serial.available())
     temp = 0xff;
     myCAM.set_format(JPEG);
     myCAM.InitCAM();
-    #if !(defined (OV2640_MINI_2MP))
-    myCAM.set_bit(ARDUCHIP_TIM, VSYNC_LEVEL_MASK);
-    #endif
     break;
     case 0x20:
     mode = 2;
@@ -205,9 +169,6 @@ if (Serial.available())
     temp = 0xff;
     myCAM.set_format(BMP);
     myCAM.InitCAM();
-    #if !(defined (OV2640_MINI_2MP))        
-    myCAM.clear_bit(ARDUCHIP_TIM, VSYNC_LEVEL_MASK);
-    #endif
     myCAM.wrSensorReg16_8(0x3818, 0x81);
     myCAM.wrSensorReg16_8(0x3621, 0xA7);
     break;
@@ -522,7 +483,7 @@ else if (mode == 3)
     myCAM.clear_fifo_flag();
   }
 }
-}
+} // loop()
 uint8_t read_fifo_burst(ArduCAM myCAM)
 {
   uint8_t temp = 0, temp_last = 0;
