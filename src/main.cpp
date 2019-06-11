@@ -9,10 +9,11 @@
 // and use Arduino IDE 1.6.8 compiler or above
 //
 // https://github.com/ArduCAM/Arduino/issues/368 :
-// MOSI on pin 11
-// MISO on pin 12
-// SCK on pin 13
-// CS is pin 10 
+// MOSI0 11
+// MISO0 12
+// SCK 13 
+// CS0 10
+// SDA0/SCL0 18/10
 //
 #include <Wire.h>
 #include <ArduCAM.h>
@@ -29,7 +30,7 @@ const char bmp_header[BMPIMAGEOFFSET] PROGMEM =
   0x00, 0x00
 };
 // set pin 7 as the slave select for the digital pot:
-const int CS = 7;
+const int CS = 10;
 bool is_header = false;
 int mode = 0;
 uint8_t start_capture = 0;
